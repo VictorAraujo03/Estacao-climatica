@@ -1,6 +1,9 @@
 import "bootstrap/dist/css/bootstrap.min.css";
 import React from "react";
 import ReactDOM from "react-dom";
+import EstacaoClimatica from "./EstacaoClimatica";
+import Loading from "./Loading";
+
 class App extends React.Component {
   icones = {
     Primavera: "fa-seedling",
@@ -9,16 +12,43 @@ class App extends React.Component {
     Inverno: "fa-snowman",
   };
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      latitude: null,
-      longitude: null,
-      estacao: null,
-      data: null,
-      icone: null,
-    };
+
+
+  // constructor(props) {
+  //   super(props);
+  //   this.state = {
+  //     latitude: null,
+  //     longitude: null,
+  //     estacao: null,
+  //     data: null,
+  //     icone: null,
+  //     mensagemDeErro: null
+  //   };
+  //   console.log('construtor')
+  // }
+
+  state = {
+    latitude: null,
+    longitude: null,
+    estacao: null,
+    data: null,
+    icone: null,
+    mensagemDeErro: null
   }
+
+
+  componentDidMount(){
+    this.obterLocalizacao()
+  }
+
+  componentDidUpdate(){
+    console.log("componentDidUpdate")
+  }
+
+  componentWillUnmount(){
+    console.log("componentWillUnmount")
+  }
+
 
   obterEstacao = (data, latitude) => {
     const anoAtual = data.getFullYear();
@@ -44,23 +74,29 @@ class App extends React.Component {
   };
 
   obterLocalizacao = () => {
-    window.navigator.geolocation.getCurrentPosition((posicao) => {
-      let data = new Date();
-      let estacao = this.obterEstacao(data, posicao.coords.latitude);
-      let icone = this.icones[estacao];
-      console.log(icone);
-      this.setState({
-        latitude: posicao.coords.latitude,
-        longitude: posicao.coords.longitude,
-        estacao: estacao,
-        data: data.toLocaleTimeString(),
-        icone: icone,
-      });
-    });
+    window.navigator.geolocation.getCurrentPosition(
+      (posicao) => {
+        let data = new Date();
+        let estacao = this.obterEstacao(data, posicao.coords.latitude);
+        let icone = this.icones[estacao];
+        console.log(icone);
+        this.setState({
+          latitude: posicao.coords.latitude,
+          longitude: posicao.coords.longitude,
+          estacao: estacao,
+          data: data.toLocaleTimeString(),
+          icone: icone,
+        });
+      },
+      (erro) => {
+        console.log(erro)
+        this.setState({mensagemDeErro: 'Tente novamente mais tarde'})
+      }
+    );
   };
 
   render() {
-    //this.obterLocalizacao();
+    console.log('render')
     return (
       //responsividade, margem acima
       <div className="container mt-2">
@@ -70,37 +106,27 @@ class App extends React.Component {
               para telas médias em diante */}
           <div className="col-md-8">
             {/**um cartão Bootstrap */}
-            <div className="card">
-              {/** o corpo do cartão */}
-              <div className="card-body">
-                {/** centraliza verticalmente, margem abaixo */}
-                <div
-                  className="d-flex align-items-center border rounded mb-2"
-                  style={{ height: "6rem" }}
-                >
-                  {/**ícone obtido do estado do componente */}
-                  <i className={`fas fa-5x ${this.state.icone}`}></i>
-                  {/** largura 75%, margem à esquerda (start), fs aumenta a fonte */}
-                  <p className="w-75 ms-3 text-center fs-1">
-                    {this.state.estacao}
-                  </p>
-                </div>
-                <div className="text-center">
-                  {/** renderização condicional */}
-                  {
-                    this.state.latitude?
-                    `Coordenadas:${this.state.latitude}, ${this.state.longitude}. Data: ${this.state.data}`
-                    :
-                    'Clique no botão para saber a sua estação climática'
-                  }
-                </div>
-                {/** botão azul (outline 100% de largura e margem acima) */}
-                <button onClick={this.obterLocalizacao}
-                    className="btn btn-outline-primary w-100 mt-2">
-                    Qual é a minha estação?
-                    </button>
-              </div>
-            </div>
+            {
+              (this.state.latitude && this.state.mensagemDeErro)?
+              <Loading mensagem = "Por favor, responda à solicitação de localização"/>
+            :
+              this.state.mensagemDeErro?
+              <p className="border rounded p-2 fs-1 text-center">
+                É preciso dar permissão para o acesso à localização.
+                Atualize a página e tente novamente, 
+                ajustando a permissão no seu navegador.
+              </p>
+            :          
+            <EstacaoClimatica 
+              icone={this.state.icone}
+              estacao={this.state.estacao}
+              latitude={this.state.latitude}
+              longitude={this.state.longitude}
+              data={this.state.data}
+              mensagemDeErro={this.state.mensagemDeErro}
+              obterLocalizacao={this.obterLocalizacao}
+            />
+          }
           </div>
         </div>
       </div>
